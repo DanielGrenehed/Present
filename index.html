@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<div id="app">
+<canvas id="canvas">
+</div>
+<style>
+body {
+    margin: 0;
+}
+.app {
+    background-color: black;
+    width: 100%;
+    height: 100%;
+}
+footer {
+    position: absolute;
+    bottom: 0;
+    right: 16px;
+}
+canvas {
+    background-color: black;
+    color: aliceblue;
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+</style>
+<script>
+const app = document.getElementById("app");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let ws; 
+let buf = [];
+function send(data) {
+    buf.push(JSON.stringify(data));
+}
+
+function setCanvasSize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    console.log("Canvas size: ", canvas.width, canvas.height);
+}
+window.addEventListener('resize', setCanvasSize, false);
+setCanvasSize();
+
+function clearScreen() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = canvas.style.color;
+}
+
+function addFullscreenButton() {
+    let fs_btn = document.createElement("button");
+    fs_btn.setAttribute("id", "fs_button");
+    fs_btn.onclick = goFullscreen;
+    fs_btn.innerHTML = "Go fullscreen"; 
+    app.appendChild(fs_btn);
+}
+
+app.addEventListener("fullscreenchange", (event) => {
+    let btn = document.getElementById("fs_button");
+    if (btn) {
+        btn.remove();
+        for (let i = 0; i < 10; i++) {pends.push(createPendulum());}
+    }
+    else addFullscreenButton();
+});
+
+function goFullscreen() { app.requestFullscreen(); }
+function exitFullscreen() { app.exitFullscreen(); }
+if (!app.fullscreen) addFullscreenButton();
+
+function easeInOut(x) {return -(Math.cos(Math.PI*x)-1)/2;}
+function lerp(a, b, t) {return (1.0-t)*a+b*t;}
+function invlerp(a, b, v) {return (v-a)/(b-a);}
+function remap(im,ix, om, ox, v) {return lerp(om, ox, invlerp(im, ix, v));}
+
+// 0.0 < x < 1.0, 0.0 < y < 1.0
+
+
+class Point {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    copy() {return new Point(this.x, this.y);}
+    
+    mult(t) {return new Point(this.x*t, this.y*t);}
+    div(t) {return new Point(this.x/t, this.y/t);}
+    add(t) {return new Point(this.x+t, this.y+t);}
+    sub(t) {return new Point(this.x-t, this.y-t);}
+    Add(p) {return new Point(this.x+p.x, this.y+p.y);}
+    Sub(p) {return new Point(this.x-p.x, this.y-p.y);}
+
+    Lerp(p2, t) {return this.mult(1.0-t).Add(p2.mult(t));}
+    
+    // spline from this point through p1 to p2
+    Spline(p1, p2, t) {return this.Lerp(p1, t).Lerp(p1.Lerp(p2, t), t);}
+    draw(r, outline=false, transform=true) {
+        ctx.beginPath();
+        let p;
+        if (transform) p = inScreenSpace(this.x, this.y);
+        else p = this;
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2, true);
+        if (outline) ctx.stroke();
+        else ctx.fill();
+    }
+}
+function inScreenSpace(x, y) {
+    return new Point(x*canvas.width, y*canvas.height);
+}
+function randomPoint(max_x=1, max_y=1) {
+    return new Point(Math.random()*max_x, Math.random()*max_y);
+}
+function randomOnScreenPoint() {
+    return randomPoint(canvas.width, canvas.height);
+}
+
+class Pendulum {
+    constructor(inc, rad) {
+        this.p1 = randomOnScreenPoint();
+        this.p2 = randomOnScreenPoint();
+        this.p3 = randomOnScreenPoint();
+        this.t = 0;
+        this.inc = inc;
+        this.rad = rad; 
+    }
+
+    draw(stroke=false) {
+        let p = this.p1.Spline(this.p2,this.p3, easeInOut(t));
+        p.draw(this.rad, stroke, false);        
+    }
+} 
+
+function createPendulum() {
+    return new Pendulum(Math.random()*0.1, Math.random()*10);
+}
+let pends = [];
+let texts = [];
+class Text {
+    constructor(text, x, y, size, fade=1) {
+        this.text = text;
+        this.x = x;
+        this.y = y;
+        this.size = size;
+        console.log(this);
+        this.t = 0;
+        this.fade = fade;
+        this.fadeout = false;
+    }
+
+    draw() {
+        if (this.fadeout && this.t > 0) {
+            this.t -= this.fade*2;
+            if (this.t <= 0) texts = texts.filter((e) => e != this);
+        } else {
+            if (this.t < 1) {
+                this.t += this.fade;
+            }
+        }
+        ctx.fillStyle = "rgba(255, 255, 255, "+easeInOut(this.t).toString()+")";
+        //console.log(ctx.fillStyle);
+        let farg = ctx.font.split(' ');
+        ctx.font = this.size + 'vh ' + farg[farg.length -1];
+        ctx.fillText(this.text, this.x, this.y);
+    }
+}
+
+
+let t = 0;
+let inc = 0.001;
+function update() {
+    t = (t+inc);
+    if (t >= 1) inc = -inc;
+    //console.log(p);
+    clearScreen();
+    pends.forEach((p) => {p.draw(false);});
+    ctx.fillStyle = "white";
+    texts.forEach((t) => {t.draw();});;
+    
+}
+
+let c_count = 0;
+canvas.addEventListener('click', (event) => {
+    console.log(event);
+    if ((event.clientX/canvas.width) > 0.5) send(c_count++);
+    else send(c_count--);
+});
+
+function onJSON(json) {
+    let p = inScreenSpace(json.x, json.y);
+    let fade = json.hasOwnProperty("fade") ? json.fade : 1;
+    texts.push(new Text(json.text, p.x, p.y, json.size, fade));
+    console.log("added text!");
+}
+
+function onString(string) {
+    if (string === "clear") {
+        texts.forEach((t) => {t.fadeout = true;});
+    }
+}
+
+function connectWS() {
+    try {
+        ws = new WebSocket("ws://localhost:8002");
+        ws.addEventListener('message', (msg) => {
+            console.log("Message from server: ", msg.data);
+            try {
+                let json = JSON.parse(msg.data);
+                if (typeof json == 'string') {
+                    onString(json);
+                    return;
+                }
+                if (Array.isArray(json)) {
+                    console.log("got array from server");
+                    for (let i = 0; i < json.length; i++) {
+                        onJSON(json[i]);
+                    }
+                } else onJSON(json);
+            } catch (_) {
+                console.log("err");
+            }
+            //let p = randomOnScreenPoint();
+            //texts.push(new Text(msg.data, p.x, p.y, 50));
+        });
+    } catch (error) {}
+}
+
+const interval = 10;
+setInterval(update, interval);
+setInterval(() => {
+    // handle ws, reconnect and send data
+   if (ws === undefined || ws.readyState == 3) connectWS();
+   else if (ws.readyState === 1) {
+        // send buffered messages
+        buf.forEach((msg) => {
+            ws.send(msg);
+        });
+        buf = [];
+    }
+}, interval);
+</script>

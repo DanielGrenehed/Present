@@ -4,9 +4,12 @@
   "description": "Nodejs presentation server",
   "main": "index.js",
   "scripts": {
-	"start":"node src/index.js",
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Daniel Amos Grenehed",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
 }
