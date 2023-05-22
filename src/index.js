@@ -5,13 +5,12 @@ const WebSocket = require('ws');
 const ws_port = 8002;
 const wss = new WebSocket.Server({port: ws_port});
 clients = [];
-let images = {"/test.webp":fs.readFileSync('./res/test.webp'),
-	"/klimio":fs.readFileSync('./res/klimio.png')
+let images = {"/klimio":fs.readFileSync('./res/klimio.png')
 };
 
 let play = [[{text:"LiA på Klimio", x: 0.1, y: 0.2, size: 10, fade:0.01},
 {text:"Daniel Grenehed - Iot21", x:0.1, y: 0.27, size: 6, fade:0.007},
-{img:"/klimio", x: 0.8, y: 0.19, scale: 1.5, fade: 0.009}],
+{img:"/klimio", x: 0.9, y: 0.07, scale: 1.5, fade: 0.009}],
 "clear"];
 
 function isImage(r) {
