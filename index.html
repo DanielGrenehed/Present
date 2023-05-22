@@ -140,13 +140,13 @@ function createPendulum() {
 }
 let pends = [];
 let texts = [];
+let images = [];
 class Text {
     constructor(text, x, y, size, fade=1) {
         this.text = text;
         this.x = x;
         this.y = y;
         this.size = size;
-        console.log(this);
         this.t = 0;
         this.fade = fade;
         this.fadeout = false;
@@ -155,7 +155,10 @@ class Text {
     draw() {
         if (this.fadeout && this.t > 0) {
             this.t -= this.fade*2;
-            if (this.t <= 0) texts = texts.filter((e) => e != this);
+            if (this.t <= 0) {
+                texts = texts.filter((e) => e != this);
+                return;
+            }
         } else {
             if (this.t < 1) {
                 this.t += this.fade;
@@ -169,18 +172,49 @@ class Text {
     }
 }
 
+class JImage {
+    constructor(image, x, y, scale, fade) {
+        this.image = image; 
+        this.width = image.width*scale;
+        this.height = image.height*scale;
+        this.x = x-this.width/2;
+        this.y = y-this.height/2; 
+        this.scale = scale;
+        this.fade = fade;
+        this.t = 0;
+        this.fadeout = false;
+    }
+
+    draw() {
+        let ga = ctx.globalAlpha;
+        
+        if (this.fadeout && this.t > 0) {
+            this.t -= this.fade *2;
+            if (this.t <= 0) {
+                images = images.filter((e) => e != this);
+                return;
+            }
+        } else {
+            if (this.t < 1) {
+                this.t += this.fade;
+            }
+        }
+        ctx.globalAlpha = easeInOut(this.t);
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+        ctx.globalAlpha = ga;
+    }
+}
 
 let t = 0;
 let inc = 0.001;
 function update() {
     t = (t+inc);
     if (t >= 1) inc = -inc;
-    //console.log(p);
     clearScreen();
     pends.forEach((p) => {p.draw(false);});
     ctx.fillStyle = "white";
-    texts.forEach((t) => {t.draw();});;
-    
+    texts.forEach((t) => {t.draw();});
+    images.forEach((i) => {i.draw();});   
 }
 
 let c_count = 0;
@@ -191,15 +225,27 @@ canvas.addEventListener('click', (event) => {
 });
 
 function onJSON(json) {
-    let p = inScreenSpace(json.x, json.y);
+
     let fade = json.hasOwnProperty("fade") ? json.fade : 1;
-    texts.push(new Text(json.text, p.x, p.y, json.size, fade));
-    console.log("added text!");
+    let p = inScreenSpace(json.x, json.y);
+    if (json.hasOwnProperty("img")) {
+        let url = json.img;
+        let img = new Image();
+        img.addEventListener("load", () => {
+            images.push(new JImage(img, p.x, p.y, json.scale, fade));
+        });
+        img.setAttribute("src", url);
+    } else if (json.hasOwnProperty("text")) {
+
+        texts.push(new Text(json.text, p.x, p.y, json.size, fade));
+        console.log("added text!");
+    } 
 }
 
 function onString(string) {
     if (string === "clear") {
         texts.forEach((t) => {t.fadeout = true;});
+        images.forEach((i) => {i.fadeout = true;});
     }
 }
 
