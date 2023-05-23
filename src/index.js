@@ -18,7 +18,7 @@ let play = [[
 "cleartext",
 [
 	{text:"Företaget", x: 0.1, y: 0.2, size: 10, fade: 0.01},
-	{text:"11 anställda, 3 inom utveckling", x: 0.15, y: 0.45, size:6, fade: 0.007},
+	{text:"12 anställda, 2 inom utveckling", x: 0.15, y: 0.45, size:6, fade: 0.007},
 	{text:"startup - värmepumpar", x: 0.15, y: 0.55, size:6, fade: 0.006}
 ],
 "clear",
