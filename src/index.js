@@ -5,12 +5,43 @@ const WebSocket = require('ws');
 const ws_port = 8002;
 const wss = new WebSocket.Server({port: ws_port});
 clients = [];
-let images = {"/klimio":fs.readFileSync('./res/klimio.png')
+let images = {
+	"/klimio":fs.readFileSync('./res/klimio.png'),
+	"/can":fs.readFileSync('./res/can.jpg')
 };
 
-let play = [[{text:"LiA på Klimio", x: 0.1, y: 0.2, size: 10, fade:0.01},
-{text:"Daniel Grenehed - Iot21", x:0.1, y: 0.27, size: 6, fade:0.007},
-{img:"/klimio", x: 0.9, y: 0.07, scale: 1.5, fade: 0.009}],
+let play = [[
+	{text:"LiA på Klimio", x: 0.1, y: 0.2, size: 10, fade:0.01},
+	{text:"Daniel Grenehed - Iot21", x:0.1, y: 0.27, size: 6, fade:0.007},
+	{img:"/klimio", x: -0.1, y: 0.07, scale: 0.25, fade: 0.009}
+],
+"cleartext",
+[
+	{text:"Företaget", x: 0.1, y: 0.2, size: 10, fade: 0.01},
+	{text:"11 anställda, 3 inom utveckling", x: 0.15, y: 0.45, size:6, fade: 0.007},
+	{text:"startup - värmepumpar", x: 0.15, y: 0.55, size:6, fade: 0.006}
+],
+"clear",
+[
+	{img:"/can", x: -0.1, y: 0.0, scale: 0.1, fade: 0.007},
+	{text:"Arbete", x: 0.1, y: 0.2, size: 10, fade: 0.01},
+	{text:"Sill stor del självständigt", x: 0.15, y: 0.45, size:6, fade: 0.007},
+	{text:"Standups varje dag 09.30", x: 0.15, y: 0.55, size:6, fade: 0.006},
+	{text:"Integrering av Bosch-värmepump", x: 0.15, y: 0.65, size:6, fade: 0.005},
+],
+"cleartext",
+[
+	{text:"Project", x: 0.1, y: 0.2, size: 10, fade: 0.01},
+	{text:"Drivrutin för USB-CAN Analyzer", x: 0.15, y: 0.45, size:6, fade: 0.007},
+	{text:"CLI verktyg CAN kommunikation", x: 0.15, y: 0.55, size:6, fade: 0.006},
+	{text:"WebServer med lagring och UI", x: 0.15, y: 0.65, size:6, fade: 0.005}
+],
+"clear",
+[
+	{text:"Lärdomar och reflektioner", x: 0.1, y: 0.2, size: 10, fade: 0.01},
+	{text:"Glöm inte bort målet", x: 0.15, y: 0.45, size:6, fade:0.007},
+	{text:"Det är ok att faila", x:0.15,y:0.55,size:6,fade:0.006}
+],
 "clear"];
 
 function isImage(r) {

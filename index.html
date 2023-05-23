@@ -92,6 +92,7 @@ class Point {
     div(t) {return new Point(this.x/t, this.y/t);}
     add(t) {return new Point(this.x+t, this.y+t);}
     sub(t) {return new Point(this.x-t, this.y-t);}
+
     Add(p) {return new Point(this.x+p.x, this.y+p.y);}
     Sub(p) {return new Point(this.x-p.x, this.y-p.y);}
 
@@ -104,13 +105,15 @@ class Point {
         let p;
         if (transform) p = inScreenSpace(this.x, this.y);
         else p = this;
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2, true);
+        ctx.arc(p.x, p.y, r*canvas.width, 0, Math.PI * 2, true);
         if (outline) ctx.stroke();
         else ctx.fill();
     }
 }
 function inScreenSpace(x, y) {
-    return new Point(x*canvas.width, y*canvas.height);
+    let tx = x<0?1.0+x:x;
+    let ty = y<0?1.0+y:y;
+    return new Point(tx*canvas.width, ty*canvas.height);
 }
 function randomPoint(max_x=1, max_y=1) {
     return new Point(Math.random()*max_x, Math.random()*max_y);
@@ -121,9 +124,9 @@ function randomOnScreenPoint() {
 
 class Pendulum {
     constructor(inc, rad) {
-        this.p1 = randomOnScreenPoint();
-        this.p2 = randomOnScreenPoint();
-        this.p3 = randomOnScreenPoint();
+        this.p1 = randomPoint();
+        this.p2 = randomPoint();
+        this.p3 = randomPoint();
         this.t = 0;
         this.inc = inc;
         this.rad = rad; 
@@ -131,12 +134,12 @@ class Pendulum {
 
     draw(stroke=false) {
         let p = this.p1.Spline(this.p2,this.p3, easeInOut(t));
-        p.draw(this.rad, stroke, false);        
+        p.draw(this.rad, stroke, true);        
     }
 } 
 
 function createPendulum() {
-    return new Pendulum(Math.random()*0.1, Math.random()*10);
+    return new Pendulum(Math.random()*0.1, Math.random()*0.005);
 }
 let pends = [];
 let texts = [];
@@ -168,16 +171,15 @@ class Text {
         //console.log(ctx.fillStyle);
         let farg = ctx.font.split(' ');
         ctx.font = this.size + 'vh ' + farg[farg.length -1];
-        ctx.fillText(this.text, this.x, this.y);
+        let p = inScreenSpace(this.x, this.y);
+        ctx.fillText(this.text, p.x, p.y);
     }
 }
 
 class JImage {
     constructor(image, x, y, scale, fade) {
         this.image = image; 
-        this.width = image.width*scale;
-        this.height = image.height*scale;
-        this.x = x-this.width;
+        this.x = x;
         this.y = y; 
         this.scale = scale;
         this.fade = fade;
@@ -199,8 +201,13 @@ class JImage {
                 this.t += this.fade;
             }
         }
+
+        let size = new Point(1.0*canvas.width, (this.image.height/this.image.width)*canvas.width).mult(this.scale);//inScreenSpace(this.image.width/this.image.width, (1.0*this.image.height)/this.image.width);
+        let p = inScreenSpace(this.x, this.y);
+        if (this.x < 0) { p.x -= size.x; }
+        if (this.y < 0) { p.y -= size.y; }
         ctx.globalAlpha = easeInOut(this.t);
-        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+        ctx.drawImage(this.image, p.x, p.y, size.x, size.y);
         ctx.globalAlpha = ga;
     }
 }
@@ -227,17 +234,16 @@ canvas.addEventListener('click', (event) => {
 function onJSON(json) {
 
     let fade = json.hasOwnProperty("fade") ? json.fade : 1;
-    let p = inScreenSpace(json.x, json.y);
+    //let p = inScreenSpace(json.x, json.y);
     if (json.hasOwnProperty("img")) {
         let url = json.img;
         let img = new Image();
         img.addEventListener("load", () => {
-            images.push(new JImage(img, p.x, p.y, json.scale, fade));
+            images.push(new JImage(img, json.x, json.y, json.scale, fade));
         });
         img.setAttribute("src", url);
     } else if (json.hasOwnProperty("text")) {
-
-        texts.push(new Text(json.text, p.x, p.y, json.size, fade));
+        texts.push(new Text(json.text, json.x, json.y, json.size, fade));
         console.log("added text!");
     } 
 }
@@ -246,6 +252,8 @@ function onString(string) {
     if (string === "clear") {
         texts.forEach((t) => {t.fadeout = true;});
         images.forEach((i) => {i.fadeout = true;});
+    } else if (string === "cleartext") {
+        texts.forEach((t) => {t.fadeout = true;});
     }
 }
 
@@ -263,7 +271,8 @@ function connectWS() {
                 if (Array.isArray(json)) {
                     console.log("got array from server");
                     for (let i = 0; i < json.length; i++) {
-                        onJSON(json[i]);
+                        if (typeof json[i] == 'string') onString(json[i]);
+                        else onJSON(json[i]);
                     }
                 } else onJSON(json);
             } catch (_) {
