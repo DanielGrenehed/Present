@@ -230,6 +230,11 @@ canvas.addEventListener('click', (event) => {
     if ((event.clientX/canvas.width) > 0.5) send(c_count++);
     else send(c_count--);
 });
+window.addEventListener('keydown', (e) => {
+    if (e.keyCode == 32) {
+        send(c_count++);
+    } 
+});
 
 function onJSON(json) {
 
@@ -259,7 +264,8 @@ function onString(string) {
 
 function connectWS() {
     try {
-        ws = new WebSocket("ws://localhost:8002");
+        let ws_url = "ws://" + window.location.hostname + ":8002"
+        ws = new WebSocket(ws_url);
         ws.addEventListener('message', (msg) => {
             console.log("Message from server: ", msg.data);
             try {

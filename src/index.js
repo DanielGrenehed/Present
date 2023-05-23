@@ -55,14 +55,16 @@ function sendImage(r, res) {
 }
 
 function handleClientMSG(client, msg) {
-	console.log(msg);
 	if (typeof msg == 'number') {
 		client.send(JSON.stringify(play[Math.abs(msg)%play.length]));
-	} else client.send(JSON.stringify({text:msg, x: Math.random(), y:Math.random(), size:50}));
+	} else {
+		client.send(JSON.stringify({text:msg, x: Math.random(), y:Math.random(), size:50}));
+		console.log(msg);
+	}
 }
 
-
 wss.on('connection', (ws) => {
+	console.log("Client connected ", ws._socket.address());
 	clients.push(ws);
 	ws.on('message', (msg) => {
 		try {handleClientMSG(ws, JSON.parse(msg));
@@ -93,4 +95,4 @@ http.createServer((req, res) => {
 }).listen(port);
 
 console.log("HTTP server started (port: %i)", port);
-console.log("WebSocketServer starsted (port: %i)", ws_port);
+console.log("WebSocketServer started (port: %i)", ws_port);
