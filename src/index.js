@@ -44,12 +44,8 @@ let play = [[
 ],
 "clear"];
 
-function isImage(r) {
-	if (images.hasOwnProperty(r)) return true;
-	return false;
-}
 function sendImage(r, res) {
-	if (!isImage(r)) return;
+	if (!images.hasOwnProperty(r)) return;
 	res.writeHead(200, {'content-type':'image/gif'});
 	res.end(images[r], 'binary');
 }
@@ -86,7 +82,7 @@ http.createServer((req, res) => {
 		res.end();
 		return;
 	}
-	else if (isImage(r)) {
+	else if (images.hasOwnProperty(r)) {
 		sendImage(r, res);
 	} else {
 		res.writeHead(200, {'content-type':'text/html'});
